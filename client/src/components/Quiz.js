@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./Quiz.css"; // Custom CSS for additional styling and animations
 
 const Quiz = () => {
-  //const location = useLocation();
-  const { subject } = useParams(); // Get subject from location.state
+  const { subject } = useParams(); // Get subject from URL params
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState({});
@@ -31,7 +32,6 @@ const Quiz = () => {
           options: shuffleOptions(q.options), // Shuffle options here
         }));
         setQuestions(shuffledQuestions);
-        console.log("Fetched questions:", shuffledQuestions);
       } catch (error) {
         console.error("Error fetching questions:", error);
       }
@@ -123,65 +123,70 @@ const Quiz = () => {
   };
 
   return (
-    <div className="container mt-5">
+    <div className="container mt-5 animate__animated animate__fadeIn">
       {questions.length > 0 ? (
-        <div>
-          <h2>{subject} Quiz</h2>
-          <div className="d-flex justify-content-between align-items-center mt-4">
-            <div>
-              <h5>
+        <div className="card shadow">
+          <div className="card-header bg-primary text-white">
+            <h2 className="card-title text-center mb-0">{subject} Quiz</h2>
+          </div>
+          <div className="card-body">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <h5 className="mb-0">
                 Question {currentQuestionIndex + 1}:{" "}
                 {questions[currentQuestionIndex].question}
               </h5>
+              <h5 className="mb-0">Time Left: {formatTime(timeLeft)}</h5>
             </div>
-            <div>
-              <h5>Time Left: {formatTime(timeLeft)}</h5>
+            <ul className="list-group">
+              {questions[currentQuestionIndex].options.map((option, idx) => (
+                <li
+                  key={idx}
+                  className={`list-group-item ${
+                    selectedOptions[currentQuestionIndex] === option
+                      ? "active"
+                      : ""
+                  }`}
+                  onClick={() => handleOptionSelect(option)}
+                >
+                  {option}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4 d-flex justify-content-between">
+              <button
+                className="btn btn-secondary"
+                onClick={handlePreviousQuestion}
+                disabled={currentQuestionIndex === 0}
+              >
+                Previous
+              </button>
+              {currentQuestionIndex < questions.length - 1 ? (
+                <button
+                  className="btn btn-primary"
+                  onClick={handleNextQuestion}
+                  disabled={!selectedOptions[currentQuestionIndex]}
+                >
+                  Next
+                </button>
+              ) : (
+                <button
+                  className="btn btn-success"
+                  onClick={handleSubmitQuiz}
+                  disabled={!selectedOptions[currentQuestionIndex]}
+                >
+                  Submit Quiz
+                </button>
+              )}
             </div>
-          </div>
-          <ul className="list-group mt-3">
-            {questions[currentQuestionIndex].options.map((option, idx) => (
-              <li
-                key={idx}
-                className={`list-group-item ${
-                  selectedOptions[currentQuestionIndex] === option
-                    ? "active"
-                    : ""
-                }`}
-                onClick={() => handleOptionSelect(option)}
-              >
-                {option}
-              </li>
-            ))}
-          </ul>
-          <div className="mt-3 d-flex justify-content-between">
-            <button
-              className="btn btn-secondary"
-              onClick={handlePreviousQuestion}
-              disabled={currentQuestionIndex === 0}
-            >
-              Previous
-            </button>
-            {currentQuestionIndex < questions.length - 1 ? (
-              <button
-                className="btn btn-primary"
-                onClick={handleNextQuestion}
-                disabled={!selectedOptions[currentQuestionIndex]}
-              >
-                Next
-              </button>
-            ) : (
-              <button
-                className="btn btn-success"
-                onClick={handleSubmitQuiz}
-                disabled={!selectedOptions[currentQuestionIndex]}
-              >
-                Submit Quiz
-              </button>
-            )}
           </div>
         </div>
       ) : (
-        <div>Loading questions...</div>
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-2">Loading questions...</p>
+        </div>
       )}
     </div>
   );

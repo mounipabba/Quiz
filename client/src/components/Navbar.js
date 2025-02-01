@@ -1,8 +1,9 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 const Navbar = ({ user, setUser }) => {
   const navigate = useNavigate();
+  const location = useLocation(); // Get the current route location
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -10,6 +11,9 @@ const Navbar = ({ user, setUser }) => {
     setUser(null);
     navigate("/login");
   };
+
+  // Check if the current route includes "/admin"
+  const isAdminRoute = location.pathname.includes("/admin");
 
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
@@ -57,18 +61,21 @@ const Navbar = ({ user, setUser }) => {
               </li>
             </>
           ) : (
-            <>
-              <li className="nav-item">
-                <Link className="nav-link" to="/register">
-                  Register
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link className="nav-link" to="/login">
-                  Login
-                </Link>
-              </li>
-            </>
+            // Only show Register and Login if the route is not an admin route
+            !isAdminRoute && (
+              <>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/register">
+                    Register
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/login">
+                    Login
+                  </Link>
+                </li>
+              </>
+            )
           )}
         </ul>
       </div>

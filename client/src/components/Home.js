@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./Home.css"; // Custom CSS for additional styling and animations
 
 const semestersData = {
   "Semester-1": [
@@ -60,21 +62,25 @@ const Home = ({ user }) => {
     setSelectedSemester(semester);
   };
 
-  const handleSubjectClick = (subject) => {
-    // Navigate to the quiz page with the selected subject in the URL
-    //navigate(`/quiz/${encodeURIComponent(subject)}`);
+  /*const handleSubjectClick = (subject) => {
     navigate("/instructions", { state: { subject } });
+  };*/
+  const handleSubjectClick = (subject) => {
+    navigate("/subject-details", { state: { subject } });
   };
+  
 
   return (
-    <div className="container mt-5">
+    <div className="container mt-5 animate__animated animate__fadeIn">
       <div className="row">
-        <div className="col-md-3 mb-3">
-          <div className="list-group">
+        <div className="col-md-3 mb-4">
+          <div className="list-group shadow">
             {Object.keys(semestersData).map((semester) => (
               <button
                 key={semester}
-                className="list-group-item list-group-item-action"
+                className={`list-group-item list-group-item-action ${
+                  selectedSemester === semester ? "active" : ""
+                }`}
                 onClick={() => handleSemesterClick(semester)}
               >
                 {semester}
@@ -84,22 +90,33 @@ const Home = ({ user }) => {
         </div>
         <div className="col-md-9">
           {selectedSemester ? (
-            <>
-              <h3>{selectedSemester}</h3>
-              <div className="list-group">
-                {semestersData[selectedSemester].map((subject, index) => (
-                  <button
-                    key={index}
-                    className="list-group-item list-group-item-action"
-                    onClick={() => handleSubjectClick(subject)}
-                  >
-                    {subject}
-                  </button>
-                ))}
+            <div className="card shadow">
+              <div className="card-body">
+                <h3 className="card-title mb-4">{selectedSemester}</h3>
+                <div className="list-group">
+                  {semestersData[selectedSemester].map((subject, index) => (
+                    <button
+                      key={index}
+                      className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                      onClick={() => handleSubjectClick(subject)}
+                    >
+                      {subject}
+                      <span className="badge bg-primary rounded-pill">
+                        Start
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </>
+            </div>
           ) : (
-            <h3>Please select a semester</h3>
+            <div className="card shadow">
+              <div className="card-body">
+                <h3 className="card-title text-center text-muted">
+                  Please select a semester
+                </h3>
+              </div>
+            </div>
           )}
         </div>
       </div>

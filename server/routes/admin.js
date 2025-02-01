@@ -3,6 +3,68 @@ const router = express.Router();
 const mongoose = require("mongoose");
 const Quiz = require("../models/Quiz");
 const Question = require("../models/Question");
+const Syllabus=require("../models/Syllabus");
+
+const multer = require("multer");
+const { Readable } = require("stream");
+
+// Use multer memory storage so that file is stored in memory as a buffer.
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+// ----------------------
+// Syllabus Upload Route
+// ----------------------
+router.post("/upload-syllabus", upload.single("file"), async (req, res) => {
+  try {
+    // Check if file is provided
+    if (!req.file) {
+      return res.status(400).json({ message: "No file provided." });
+    }
+
+    // Get the MongoDB database instance from mongoose connection
+    const db = mongoose.connection.db;
+    // Initialize a GridFSBucket with bucket name 'uploads'
+    const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "uploads" });
+
+    // Create a readable stream from the file buffer
+    const readableFileStream = new Readable();
+    readableFileStream.push(req.file.buffer);
+    readableFileStream.push(null);
+
+    // Pipe the file into GridFS
+    const uploadStream = bucket.openUploadStream(req.file.originalname, {
+      contentType: req.file.mimetype,
+      metadata: {} // Add any additional metadata here if needed
+    });
+
+    readableFileStream.pipe(uploadStream)
+      .on("error", (error) => {
+        console.error("Error uploading file to GridFS:", error);
+        return res.status(500).json({ message: "Error uploading file." });
+      })
+      .on("finish", async () => {
+        // File successfully stored in GridFS; save record in Syllabus collection
+        const newSyllabus = new Syllabus({
+          filename: req.file.originalname,
+          fileId: uploadStream.id,
+          contentType: req.file.mimetype,
+          uploadDate: new Date(),
+          metaData: req.body // or add custom metadata as needed
+        });
+        await newSyllabus.save();
+
+        return res.status(201).json({ 
+          message: "Syllabus uploaded successfully.", 
+          fileId: uploadStream.id 
+        });
+      });
+  } catch (error) {
+    console.error("Error in /upload-syllabus route:", error);
+    res.status(500).json({ message: "Server error while uploading syllabus." });
+  }
+});
+
 
 // Function to get the correct collection based on the subject
 router.post("/upload-questions", async (req, res) => {

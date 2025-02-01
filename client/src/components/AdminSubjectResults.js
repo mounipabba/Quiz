@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import * as XLSX from "xlsx";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./AdminSubjectResults.css"; // Custom CSS for additional styling and animations
 
 const AdminSubjectResults = () => {
   const { subject } = useParams();
@@ -40,34 +42,49 @@ const AdminSubjectResults = () => {
   };
 
   return (
-    <div className="container mt-5">
-      <h3>{subject} Quiz Results</h3>
-      <table className="table table-striped">
-        <thead>
-          <tr>
-            <th>Roll No</th>
-            <th>Name</th>
-            <th>Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          {results.map((result, index) => {
-            const correctAnswers = result.results.filter(
-              (r) => r.isCorrect
-            ).length;
-            return (
-              <tr key={index}>
-                <td>{result.user.rollNo}</td>
-                <td>{result.user.name}</td>
-                <td>{correctAnswers}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      <button className="btn btn-primary mt-3" onClick={handleDownload}>
-        Download Excel
-      </button>
+    <div className="container mt-5 animate__animated animate__fadeIn">
+      <div className="card shadow">
+        <div className="card-header bg-primary text-white">
+          <h3 className="card-title text-center mb-0">
+            {subject} Quiz Results
+          </h3>
+        </div>
+        <div className="card-body">
+          <div className="table-responsive">
+            <table className="table table-striped table-hover">
+              <thead className="thead-dark">
+                <tr>
+                  <th>Roll No</th>
+                  <th>Name</th>
+                  <th>Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.map((result, index) => {
+                  const correctAnswers = result.results.filter(
+                    (r) => r.isCorrect
+                  ).length;
+                  return (
+                    <tr key={index} className="animate__animated animate__fadeIn">
+                      <td>{result.user.rollNo}</td>
+                      <td>{result.user.name}</td>
+                      <td>{correctAnswers}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="text-center mt-4">
+            <button
+              className="btn btn-primary btn-lg animate__animated animate__pulse animate__infinite"
+              onClick={handleDownload}
+            >
+              Download Excel
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

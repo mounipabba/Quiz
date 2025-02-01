@@ -13,15 +13,18 @@ import Register from "./components/Register";
 import Login from "./components/Login";
 import Quiz from "./components/Quiz";
 import QuizInstructions from "./components/QuizInstructions";
+import SubjectDetails from "./components/SubjectDetails";
 import QuizSummary from "./components/QuizSummary";
 import History from "./components/History";
 import QuizDetail from "./components/QuizDetail";
 import ProtectedRoute from "./components/ProtectedRoute";
-import AdminDashboard from "./components/AdminDashboard";
 import AdminPage from "./components/AdminPage";
 import AdminSubject from "./components/AdminSubject";
 import AdminUpload from "./components/AdminUpload";
+import AdminUploadSyllabus from "./components/AdminUploadSyllabus";
 import AdminSubjectResults from "./components/AdminSubjectResults";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./App.css"; // Custom CSS for additional styling and animations
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -47,13 +50,19 @@ const App = () => {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
     <Router>
       <Navbar user={user} setUser={setUser} />
-      <div className="container mt-5">
+      <div className="container mt-5 animate__animated animate__fadeIn">
         <Routes>
           <Route
             path="/"
@@ -77,6 +86,8 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+          <Route path="/subject-details" element={<SubjectDetails />} />
+
           <Route
             path="/instructions"
             element={
@@ -115,7 +126,7 @@ const App = () => {
             path="/admin/subject/:subject/upload"
             element={<AdminUpload />}
           />
-          <Route path="/admin" component={AdminDashboard} />
+          <Route path="/admin/subject/:subject/upload-syllabus" element={<AdminUploadSyllabus />} />
           <Route
             path="/admin/subject/:subject/results"
             element={<AdminSubjectResults />}

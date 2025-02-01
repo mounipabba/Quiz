@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import Papa from "papaparse";
 import axios from "axios";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./AdminUpload.css"; // Custom CSS for additional styling and animations
 
 const AdminUpload = () => {
   const [file, setFile] = useState(null);
@@ -75,15 +77,49 @@ const AdminUpload = () => {
   };
 
   return (
-    <div className="container mt-5">
-      <h2>Upload Questions</h2>
-      <div className="form-group">
-        <input type="file" accept=".csv" onChange={handleFileChange} />
+    <div className="container mt-5 animate__animated animate__fadeIn">
+      <div className="row justify-content-center">
+        <div className="col-md-8 col-lg-6">
+          <div className="card shadow">
+            <div className="card-header bg-primary text-white">
+              <h2 className="card-title text-center mb-0">Upload Questions</h2>
+            </div>
+            <div className="card-body">
+              <div className="form-group">
+                <label htmlFor="fileInput" className="form-label">
+                  Choose a CSV file
+                </label>
+                <input
+                  type="file"
+                  id="fileInput"
+                  accept=".csv"
+                  className="form-control"
+                  onChange={handleFileChange}
+                />
+              </div>
+              <div className="text-center mt-4">
+                <button
+                  className="btn btn-primary btn-lg animate__animated animate__pulse animate__infinite"
+                  onClick={handleUpload}
+                >
+                  Upload
+                </button>
+              </div>
+              {uploadMessage && (
+                <div
+                  className={`alert ${
+                    uploadMessage.includes("successfully")
+                      ? "alert-success"
+                      : "alert-danger"
+                  } mt-4 animate__animated animate__fadeIn`}
+                >
+                  {uploadMessage}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
-      <button className="btn btn-primary" onClick={handleUpload}>
-        Upload
-      </button>
-      {uploadMessage && <p className="mt-3">{uploadMessage}</p>}
     </div>
   );
 };
