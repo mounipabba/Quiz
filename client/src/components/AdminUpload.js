@@ -1,8 +1,124 @@
 import React, { useState } from "react";
 import Papa from "papaparse";
 import axios from "axios";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "./AdminUpload.css"; // Custom CSS for additional styling and animations
+import styled, { keyframes } from "styled-components";
+
+// Animations
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+`;
+
+const pulse = keyframes`
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+`;
+
+// Styled Components
+
+// Main container
+const Container = styled.div`
+  margin-top: 3rem;
+  padding: 0 1rem;
+  animation: ${fadeIn} 1s ease-in-out;
+`;
+
+// Card Component
+const Card = styled.div`
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  margin: 0 auto;
+  max-width: 600px;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+  }
+`;
+
+// Card Header
+const CardHeader = styled.div`
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  padding: 1.5rem;
+  text-align: center;
+  color: #fff;
+  font-size: 1.75rem;
+  font-weight: bold;
+  border-radius: 10px 10px 0 0;
+`;
+
+// Card Body
+const CardBody = styled.div`
+  padding: 1.5rem;
+`;
+
+// Form Group for input
+const FormGroup = styled.div`
+  margin-bottom: 1rem;
+  text-align: left;
+`;
+
+// Form Label
+const FormLabel = styled.label`
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+`;
+
+// File Input styling
+const FileInput = styled.input`
+  display: block;
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  transition: border-color 0.3s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  }
+`;
+
+// Button styling
+const Button = styled.button`
+  background-color: #007bff;
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  animation: ${pulse} 1.5s infinite ease-in-out;
+  width: 100%;
+  margin-top: 1rem;
+
+  &:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+  }
+`;
+
+// Alert message styling
+const Alert = styled.div`
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 5px;
+  text-align: center;
+  font-weight: bold;
+  animation: ${fadeIn} 1s ease-in-out;
+  background-color: ${({ type }) =>
+    type === "success" ? "#d4edda" : "#f8d7da"};
+  color: ${({ type }) => (type === "success" ? "#155724" : "#721c24")};
+`;
 
 const AdminUpload = () => {
   const [file, setFile] = useState(null);
@@ -16,20 +132,11 @@ const AdminUpload = () => {
     const questions = [];
     let subject = null;
 
+    // Skip header row and process remaining rows
     data.forEach((row, index) => {
-      if (index === 0) return; // Skip header row
-      const [
-        rowSubject,
-        questionText,
-        optionA,
-        optionB,
-        optionC,
-        optionD,
-        answer,
-      ] = row;
-
+      if (index === 0) return;
+      const [rowSubject, questionText, optionA, optionB, optionC, optionD, answer] = row;
       if (!subject) subject = rowSubject;
-
       questions.push({
         questionText,
         options: [optionA, optionB, optionC, optionD],
@@ -51,9 +158,7 @@ const AdminUpload = () => {
       complete: async function (results) {
         const parsedData = processCSV(results.data);
         if (!parsedData || parsedData.questions.length === 0) {
-          setUploadMessage(
-            "Failed to extract questions or subject. Please check the CSV format."
-          );
+          setUploadMessage("Failed to extract questions or subject. Please check the CSV format.");
           return;
         }
 
@@ -77,50 +182,28 @@ const AdminUpload = () => {
   };
 
   return (
-    <div className="container mt-5 animate__animated animate__fadeIn">
-      <div className="row justify-content-center">
-        <div className="col-md-8 col-lg-6">
-          <div className="card shadow">
-            <div className="card-header bg-primary text-white">
-              <h2 className="card-title text-center mb-0">Upload Questions</h2>
-            </div>
-            <div className="card-body">
-              <div className="form-group">
-                <label htmlFor="fileInput" className="form-label">
-                  Choose a CSV file
-                </label>
-                <input
-                  type="file"
-                  id="fileInput"
-                  accept=".csv"
-                  className="form-control"
-                  onChange={handleFileChange}
-                />
-              </div>
-              <div className="text-center mt-4">
-                <button
-                  className="btn btn-primary btn-lg animate__animated animate__pulse animate__infinite"
-                  onClick={handleUpload}
-                >
-                  Upload
-                </button>
-              </div>
-              {uploadMessage && (
-                <div
-                  className={`alert ${
-                    uploadMessage.includes("successfully")
-                      ? "alert-success"
-                      : "alert-danger"
-                  } mt-4 animate__animated animate__fadeIn`}
-                >
-                  {uploadMessage}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <Container className="animate__animated animate__fadeIn">
+      <Card>
+        <CardHeader>Upload Questions</CardHeader>
+        <CardBody>
+          <FormGroup>
+            <FormLabel htmlFor="fileInput">Choose a CSV file</FormLabel>
+            <FileInput
+              type="file"
+              id="fileInput"
+              accept=".csv"
+              onChange={handleFileChange}
+            />
+          </FormGroup>
+          <Button onClick={handleUpload}>Upload</Button>
+          {uploadMessage && (
+            <Alert type={uploadMessage.includes("successfully") ? "success" : "danger"}>
+              {uploadMessage}
+            </Alert>
+          )}
+        </CardBody>
+      </Card>
+    </Container>
   );
 };
 

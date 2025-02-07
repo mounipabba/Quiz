@@ -1,14 +1,23 @@
 const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
-const Quiz = require("../models/Quiz");
-const Question = require("../models/Question");
-const Syllabus=require("../models/Syllabus");
-
+const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const { Readable } = require("stream");
+const Syllabus = require("../models/Syllabus");
 
-// Use multer memory storage so that file is stored in memory as a buffer.
+// Admin login route (unchanged)
+const ADMIN_USERNAME = "SCET";
+const ADMIN_PASSWORD = "SCET";
+router.post("/login", (req, res) => {
+  const { username, password } = req.body;
+  if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    const token = jwt.sign({ role: "admin" }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    return res.json({ success: true, token });
+  }
+  return res.status(401).json({ success: false, message: "Invalid username or password" });
+});
+
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
@@ -17,46 +26,45 @@ const upload = multer({ storage });
 // ----------------------
 router.post("/upload-syllabus", upload.single("file"), async (req, res) => {
   try {
-    // Check if file is provided
     if (!req.file) {
       return res.status(400).json({ message: "No file provided." });
     }
-
-    // Get the MongoDB database instance from mongoose connection
+    const subject = req.body.subject && req.body.subject.trim();
+    if (!subject) {
+      return res.status(400).json({ message: "No subject provided." });
+    }
     const db = mongoose.connection.db;
-    // Initialize a GridFSBucket with bucket name 'uploads'
     const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "uploads" });
-
-    // Create a readable stream from the file buffer
+    const { Readable } = require("stream");
     const readableFileStream = new Readable();
     readableFileStream.push(req.file.buffer);
     readableFileStream.push(null);
-
-    // Pipe the file into GridFS
     const uploadStream = bucket.openUploadStream(req.file.originalname, {
       contentType: req.file.mimetype,
-      metadata: {} // Add any additional metadata here if needed
+      metadata: { subject }
     });
-
     readableFileStream.pipe(uploadStream)
       .on("error", (error) => {
         console.error("Error uploading file to GridFS:", error);
         return res.status(500).json({ message: "Error uploading file." });
       })
       .on("finish", async () => {
-        // File successfully stored in GridFS; save record in Syllabus collection
         const newSyllabus = new Syllabus({
           filename: req.file.originalname,
-          fileId: uploadStream.id,
+          fileId: uploadStream.id.toString(), // Store as string!
           contentType: req.file.mimetype,
           uploadDate: new Date(),
-          metaData: req.body // or add custom metadata as needed
+          subject,
+          metaData: req.body
         });
         await newSyllabus.save();
-
-        return res.status(201).json({ 
-          message: "Syllabus uploaded successfully.", 
-          fileId: uploadStream.id 
+        return res.status(201).json({
+          message: "Syllabus uploaded successfully.",
+          fileId: uploadStream.id.toString(),
+          filename: req.file.originalname, // Include filename
+          subject: req.body.subject,
+          contentType: req.file.mimetype,
+          uploadDate: new Date(),
         });
       });
   } catch (error) {
@@ -65,6 +73,110 @@ router.post("/upload-syllabus", upload.single("file"), async (req, res) => {
   }
 });
 
+
+// --------------------------------------
+// Get Syllabus Metadata for a Subject
+// --------------------------------------
+router.get("/syllabus-metadata/:subject", async (req, res) => {
+  try {
+    const subjectParam = decodeURIComponent(req.params.subject).trim();
+
+    // Find ALL syllabi for the subject and send them as an array
+    const syllabi = await Syllabus.find({
+      subject: { $regex: new RegExp(`^${subjectParam}$`, "i") },
+    }).sort({ uploadDate: -1 });
+
+    if (!syllabi || syllabi.length === 0) {
+      return res.status(404).json({ message: "No syllabus found for this subject." });
+    }
+
+    res.status(200).json(syllabi); 
+  } catch (error) {
+    console.error("Error fetching syllabus metadata:", error);
+    res.status(500).json({ message: "Server error fetching syllabus metadata." });
+  }
+});
+
+// ------------------------------
+// Get Syllabus File by FileId
+// ------------------------------
+router.get("/syllabus-file/:id", async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    console.log("Fetching file with ID:", fileId);
+    const db = mongoose.connection.db;
+    const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "uploads" });
+
+    // Log the file(s) that match the given ID
+    bucket.find({ _id: new mongoose.Types.ObjectId(fileId) }).toArray((err, files) => {
+      if (err) {
+        console.error("Error finding file in GridFS:", err);
+      } else {
+        console.log("Found files:", files);
+      }
+    });
+
+    bucket.openDownloadStream(new mongoose.Types.ObjectId(fileId))
+      .on("error", (err) => {
+        console.error("Error streaming file:", err);
+        return res.status(404).json({ message: "File not found." });
+      })
+      .pipe(res);
+  } catch (error) {
+    console.error("Error in GET /syllabus-file/:id:", error);
+    res.status(500).json({ message: "Server error fetching file." });
+  }
+});
+
+
+// ------------------------------
+// Delete a Syllabus File
+// ------------------------------
+router.delete("/syllabus/filename/:filename", async (req, res) => {
+  try {
+    const { filename } = req.params;
+    console.log("Attempting to delete syllabus with filename:", filename);
+
+    const db = mongoose.connection.db;
+    const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "uploads" });
+
+    // Find the file in GridFS (case-insensitive search)
+    const files = await bucket.find({ filename: { $regex: new RegExp(`^${filename}$`, "i") } }).toArray();
+
+    if (!files || files.length === 0) {
+      return res.status(404).json({ message: "File not found in GridFS." }); // 404 for not found
+    }
+
+    const fileToDelete = files[0]; // Take the first matching file (if multiple exist)
+
+    // Delete from GridFS
+    await bucket.delete(fileToDelete._id);
+
+    // Delete from Syllabuses collection (case-insensitive)
+    const deletedSyllabus = await Syllabus.findOneAndDelete({ filename: { $regex: new RegExp(`^${filename}$`, "i") } });
+
+    if (!deletedSyllabus) {
+      return res.status(404).json({ message: "Syllabus record not found in database." }); // 404 if not found in Syllabuses
+    }
+
+    res.status(200).json({ message: "Syllabus deleted successfully." }); // 200 for successful deletion
+
+  } catch (error) {
+    console.error("Error in DELETE /syllabus/filename/:filename route:", error);
+    res.status(500).json({ message: "Server error deleting syllabus." }); // 500 for server error
+  }
+});
+
+
+
+
+
+
+
+
+
+
+// (Other routes remain unchanged)
 
 // Function to get the correct collection based on the subject
 router.post("/upload-questions", async (req, res) => {

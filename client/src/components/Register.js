@@ -1,7 +1,144 @@
 import React, { useState } from "react";
 import axios from "axios";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "./Register.css"; // Custom CSS for additional styling and animations
+import styled, { keyframes } from "styled-components";
+
+// Keyframe animations
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+const shakeX = keyframes`
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-5px); }
+  100% { transform: translateX(0); }
+`;
+
+// Container (replaces .container.mt-5 and animate__fadeIn)
+const Container = styled.div`
+  margin-top: 3rem;
+  animation: ${fadeIn} 1s;
+`;
+
+// Row & Column for grid layout
+const Row = styled.div`
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+`;
+
+const Column = styled.div`
+  width: 100%;
+  max-width: 600px; /* roughly col-md-8 col-lg-6 */
+  padding: 0 15px;
+`;
+
+// Card styling (replaces .card and its hover effects)
+const Card = styled.div`
+  background: #fff;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  }
+
+  @media (max-width: 768px) {
+    margin: 0 10px;
+  }
+`;
+
+// Card body styling
+const CardBody = styled.div`
+  padding: 1.5rem;
+`;
+
+// Title styling
+const Title = styled.h2`
+  text-align: center;
+  margin-bottom: 1.5rem;
+`;
+
+// Form styling
+const Form = styled.form`
+  width: 100%;
+`;
+
+// Row for grouping form columns
+const FormRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+`;
+
+// Each column in the form
+const FormColumn = styled.div`
+  flex: 1;
+  min-width: 250px;
+`;
+
+// Form group styling (for spacing between label & input)
+const FormGroup = styled.div`
+  margin-bottom: 1rem;
+`;
+
+// Label styling
+const Label = styled.label`
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+`;
+
+// Input styling (replaces .form-control)
+const Input = styled.input`
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  transition: border-color 0.3s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  }
+`;
+
+// Button styling (replaces .btn.btn-primary)
+const Button = styled.button`
+  width: 100%;
+  padding: 0.5rem;
+  background-color: #007bff;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 1rem;
+
+  &:hover {
+    background-color: #0056b3;
+  }
+`;
+
+// Alert styling (for error and success messages)
+const Alert = styled.div`
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 5px;
+  background-color: ${({ variant }) =>
+    variant === "danger" ? "#f8d7da" : "#d4edda"};
+  color: ${({ variant }) =>
+    variant === "danger" ? "#721c24" : "#155724"};
+  animation: ${({ variant }) =>
+    variant === "danger" ? shakeX : fadeIn} 1s;
+`;
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -61,160 +198,139 @@ const Register = () => {
   };
 
   return (
-    <div className="container mt-5 animate__animated animate__fadeIn">
-      <div className="row justify-content-center">
-        <div className="col-md-8 col-lg-6">
-          <div className="card shadow">
-            <div className="card-body">
-              <h2 className="card-title text-center mb-4">Register</h2>
-              <form onSubmit={handleSubmit}>
-                <div className="row">
-                  <div className="col-md-6">
-                    <div className="form-group mb-3">
-                      <label>Roll No</label>
-                      <input
+    <Container>
+      <Row>
+        <Column>
+          <Card>
+            <CardBody>
+              <Title>Register</Title>
+              <Form onSubmit={handleSubmit}>
+                <FormRow>
+                  <FormColumn>
+                    <FormGroup>
+                      <Label>Roll No</Label>
+                      <Input
                         type="text"
-                        className="form-control"
                         name="rollNo"
                         value={formData.rollNo}
                         onChange={handleChange}
                         required
                       />
-                    </div>
-                    <div className="form-group mb-3">
-                      <label>Name</label>
-                      <input
+                    </FormGroup>
+                    <FormGroup>
+                      <Label>Name</Label>
+                      <Input
                         type="text"
-                        className="form-control"
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
                         required
                       />
-                    </div>
-                    <div className="form-group mb-3">
-                      <label>Branch</label>
-                      <input
+                    </FormGroup>
+                    <FormGroup>
+                      <Label>Branch</Label>
+                      <Input
                         type="text"
-                        className="form-control"
                         name="branch"
                         value={formData.branch}
                         onChange={handleChange}
                         required
                       />
-                    </div>
-                    <div className="form-group mb-3">
-                      <label>Section</label>
-                      <input
+                    </FormGroup>
+                    <FormGroup>
+                      <Label>Section</Label>
+                      <Input
                         type="text"
-                        className="form-control"
                         name="section"
                         value={formData.section}
                         onChange={handleChange}
                         required
                       />
-                    </div>
-                    <div className="form-group mb-3">
-                      <label>Year of Study</label>
-                      <input
+                    </FormGroup>
+                    <FormGroup>
+                      <Label>Year of Study</Label>
+                      <Input
                         type="text"
-                        className="form-control"
                         name="yearOfStudy"
                         value={formData.yearOfStudy}
                         onChange={handleChange}
                         required
                       />
-                    </div>
-                  </div>
-                  <div className="col-md-6">
-                    <div className="form-group mb-3">
-                      <label>Gender</label>
-                      <input
+                    </FormGroup>
+                  </FormColumn>
+                  <FormColumn>
+                    <FormGroup>
+                      <Label>Gender</Label>
+                      <Input
                         type="text"
-                        className="form-control"
                         name="gender"
                         value={formData.gender}
                         onChange={handleChange}
                         required
                       />
-                    </div>
-                    <div className="form-group mb-3">
-                      <label>Mobile No</label>
-                      <input
+                    </FormGroup>
+                    <FormGroup>
+                      <Label>Mobile No</Label>
+                      <Input
                         type="text"
-                        className="form-control"
                         name="mobileNo"
                         value={formData.mobileNo}
                         onChange={handleChange}
                         required
                       />
-                    </div>
-                    <div className="form-group mb-3">
-                      <label>Email ID</label>
-                      <input
+                    </FormGroup>
+                    <FormGroup>
+                      <Label>Email ID</Label>
+                      <Input
                         type="email"
-                        className="form-control"
                         name="emailId"
                         value={formData.emailId}
                         onChange={handleChange}
                         required
                       />
-                    </div>
-                    <div className="form-group mb-3">
-                      <label>Username</label>
-                      <input
+                    </FormGroup>
+                    <FormGroup>
+                      <Label>Username</Label>
+                      <Input
                         type="text"
-                        className="form-control"
                         name="username"
                         value={formData.username}
                         onChange={handleChange}
                         required
                       />
-                    </div>
-                    <div className="form-group mb-3">
-                      <label>Password</label>
-                      <input
+                    </FormGroup>
+                    <FormGroup>
+                      <Label>Password</Label>
+                      <Input
                         type="password"
-                        className="form-control"
                         name="password"
                         value={formData.password}
                         onChange={handleChange}
                         required
                         placeholder="At least 6 characters with one uppercase, one lowercase, one special character, and a number."
                       />
-                    </div>
-                    <div className="form-group mb-3">
-                      <label>Confirm Password</label>
-                      <input
+                    </FormGroup>
+                    <FormGroup>
+                      <Label>Confirm Password</Label>
+                      <Input
                         type="password"
-                        className="form-control"
                         name="confirmPassword"
                         value={formData.confirmPassword}
                         onChange={handleChange}
                         required
                       />
-                    </div>
-                  </div>
-                </div>
-                <button type="submit" className="btn btn-primary w-100 mt-3">
-                  Register
-                </button>
-                {error && (
-                  <div className="alert alert-danger mt-3 animate__animated animate__shakeX">
-                    {error}
-                  </div>
-                )}
-                {message && (
-                  <div className="alert alert-success mt-3 animate__animated animate__fadeIn">
-                    {message}
-                  </div>
-                )}
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+                    </FormGroup>
+                  </FormColumn>
+                </FormRow>
+                <Button type="submit">Register</Button>
+                {error && <Alert variant="danger">{error}</Alert>}
+                {message && <Alert variant="success">{message}</Alert>}
+              </Form>
+            </CardBody>
+          </Card>
+        </Column>
+      </Row>
+    </Container>
   );
 };
 

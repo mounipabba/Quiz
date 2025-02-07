@@ -1,7 +1,136 @@
+// src/components/AdminPage.js
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "./AdminPage.css"; // Custom CSS for additional styling and animations
+import styled, { keyframes } from "styled-components";
+
+// Fade-in animation keyframes (1s duration)
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+`;
+
+/* Container styles with fade-in animation */
+const Container = styled.div`
+  max-width: 1200px;
+  margin: 3rem auto;
+  display: flex;
+  gap: 2rem;
+  animation: ${fadeIn} 1s;
+  background-color:#ffffff;
+  padding:10px;
+  border-radius:10px
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+`;
+
+/* Sidebar styles */
+const Sidebar = styled.div`
+  flex: 0 0 250px;
+  display: flex;
+  flex-direction: column;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 1rem;
+  }
+`;
+
+/* SemesterButton styled as a list-group item.
+   Uses transient prop $active so it isn’t passed to the DOM. */
+const SemesterButton = styled.button`
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+  background: ${(props) => (props.$active ? "#007bff" : "#f8f9fa")};
+  color: ${(props) => (props.$active ? "#fff" : "#333")};
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  
+  &:hover {
+    background: ${(props) => (props.$active ? "#0056b3" : "#f8f9fa")};
+    transform: ${(props) => (props.$active ? "none" : "translateX(5px)")};
+  }
+`;
+
+/* Content area styling */
+const Content = styled.div`
+  flex: 1;
+`;
+
+/* Card styled to mimic the animated card hover effect */
+const Card = styled.div`
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  }
+`;
+
+/* CardHeader with adjusted border-radius and padding */
+const CardHeader = styled.div`
+  background: #007bff;
+  color: #fff;
+  padding: 1rem;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+`;
+
+/* CardTitle styling */
+const CardTitle = styled.h3`
+  margin: 0;
+`;
+
+/* CardBody with updated padding */
+const CardBody = styled.div`
+  padding: 1.5rem;
+`;
+
+/* SubjectButton styled as a list-group item */
+const SubjectButton = styled.button`
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 0.75rem;
+  background: #f8f9fa;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  
+  &:hover {
+    background: #f8f9fa;
+    transform: translateX(5px);
+  }
+`;
+
+/* Badge styling */
+const Badge = styled.span`
+  background: #007bff;
+  color: #fff;
+  padding: 0.5em 0.75em;
+  border-radius: 12px;
+  font-size: 0.9rem;
+`;
+
+/* PlaceholderCard for when no semester is selected */
+const PlaceholderCard = styled(Card)`
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+`;
 
 const semestersData = {
   "Semester-1": [
@@ -67,58 +196,42 @@ const AdminPage = () => {
   };
 
   return (
-    <div className="container mt-5 animate__animated animate__fadeIn">
-      <div className="row">
-        <div className="col-md-3 mb-4">
-          <div className="list-group shadow">
-            {Object.keys(semestersData).map((semester) => (
-              <button
-                key={semester}
-                className={`list-group-item list-group-item-action ${
-                  selectedSemester === semester ? "active" : ""
-                }`}
-                onClick={() => handleSemesterClick(semester)}
-              >
-                {semester}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="col-md-9">
-          {selectedSemester ? (
-            <div className="card shadow">
-              <div className="card-header bg-primary text-white">
-                <h3 className="card-title mb-0">{selectedSemester}</h3>
-              </div>
-              <div className="card-body">
-                <div className="list-group">
-                  {semestersData[selectedSemester].map((subject, index) => (
-                    <button
-                      key={index}
-                      className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                      onClick={() => handleSubjectClick(subject)}
-                    >
-                      {subject}
-                      <span className="badge bg-primary rounded-pill">
-                        View
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="card shadow">
-              <div className="card-body">
-                <h3 className="card-title text-center text-muted">
-                  Please select a semester
-                </h3>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+    <Container>
+      <Sidebar>
+        {Object.keys(semestersData).map((semester) => (
+          <SemesterButton
+            key={semester}
+            $active={selectedSemester === semester}
+            onClick={() => handleSemesterClick(semester)}
+          >
+            {semester}
+          </SemesterButton>
+        ))}
+      </Sidebar>
+      <Content>
+        {selectedSemester ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>{selectedSemester}</CardTitle>
+            </CardHeader>
+            <CardBody>
+              {semestersData[selectedSemester].map((subject, index) => (
+                <SubjectButton
+                  key={index}
+                  onClick={() => handleSubjectClick(subject)}
+                >
+                  {subject} <Badge>View</Badge>
+                </SubjectButton>
+              ))}
+            </CardBody>
+          </Card>
+        ) : (
+          <PlaceholderCard>
+            <h3>Please select a semester</h3>
+          </PlaceholderCard>
+        )}
+      </Content>
+    </Container>
   );
 };
 

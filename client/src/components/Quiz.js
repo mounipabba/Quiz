@@ -1,25 +1,142 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "./Quiz.css"; // Custom CSS for additional styling and animations
+import styled, { keyframes } from "styled-components";
+
+// Animations
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const pulse = keyframes`
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+`;
+
+// Styled Components
+const Container = styled.div`
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f9f9f9, #e6e6e6);
+  animation: ${fadeIn} 1s ease-in-out;
+`;
+
+const Card = styled.div`
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  width: 90%;
+  max-width: 600px;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+  }
+`;
+
+const CardHeader = styled.div`
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: #fff;
+  padding: 1.5rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+`;
+
+const CardBody = styled.div`
+  padding: 1.5rem;
+  text-align: left;
+`;
+
+const QuestionText = styled.h5`
+  margin-bottom: 1rem;
+  font-weight: bold;
+  color: #333;
+`;
+
+const TimerText = styled.h5`
+  color: #ff4757;
+  font-weight: bold;
+`;
+
+const ListGroup = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+`;
+
+const ListItem = styled.li`
+  background: ${({ selected }) => (selected ? "#007bff" : "#f8f9fa")};
+  color: ${({ selected }) => (selected ? "#fff" : "#333")};
+  padding: 0.75rem 1.25rem;
+  border-radius: 5px;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  transition: background 0.3s ease;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    background: ${({ selected }) => (selected ? "#0056b3" : "#e9ecef")};
+  }
+`;
+
+const Button = styled.button`
+  background: ${({ variant }) =>
+    variant === "success"
+      ? "#28a745"
+      : variant === "primary"
+      ? "#007bff"
+      : "#6c757d"};
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 48%;
+  animation: ${pulse} 1.5s infinite ease-in-out;
+
+  &:hover {
+    opacity: 0.9;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+`;
 
 const Quiz = () => {
-  const { subject } = useParams(); // Get subject from URL params
+  const { subject } = useParams();
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState({});
   const [timeLeft, setTimeLeft] = useState(30 * 60); // 30 minutes in seconds
   const navigate = useNavigate();
 
-  // Function to shuffle options
-  const shuffleOptions = (options) => {
-    return options.sort(() => Math.random() - 0.5);
-  };
+  const shuffleOptions = (options) => options.sort(() => Math.random() - 0.5);
 
   useEffect(() => {
     if (!subject) {
-      // Redirect to home if subject is missing
       navigate("/");
       return;
     }
@@ -29,7 +146,7 @@ const Quiz = () => {
         const response = await axios.get(`/api/quiz/questions/${subject}`);
         const shuffledQuestions = response.data.map((q) => ({
           ...q,
-          options: shuffleOptions(q.options), // Shuffle options here
+          options: shuffleOptions(q.options),
         }));
         setQuestions(shuffledQuestions);
       } catch (error) {
@@ -64,43 +181,29 @@ const Quiz = () => {
       const token = localStorage.getItem("token");
       const results = questions.map((q, index) => {
         const userAnswer = selectedOptions[index] || null;
-        const isCorrect = userAnswer === q.answer;
         return {
           questionId: q._id,
           userAnswer,
           correctAnswer: q.answer,
-          isCorrect,
+          isCorrect: userAnswer === q.answer,
         };
       });
 
       const correctCount = results.filter((r) => r.isCorrect).length;
       const wrongCount = results.length - correctCount;
-      const unansweredCount = results.filter(
-        (r) => r.userAnswer === null
-      ).length;
-      const totalMarks = correctCount; // Assuming 1 mark per correct answer
+      const totalMarks = correctCount;
 
       await axios.post(
         "/api/quiz/submit",
         { subject, results },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       navigate("/summary", {
-        state: {
-          subject,
-          correctCount,
-          wrongCount,
-          unansweredCount,
-          totalMarks,
-        },
+        state: { subject, correctCount, wrongCount,totalMarks },
       });
     } catch (error) {
-      console.error("Error submitting quiz:", error.response || error.message);
+      console.error("Error submitting quiz:", error);
     }
   }, [questions, selectedOptions, navigate, subject]);
 
@@ -108,87 +211,57 @@ const Quiz = () => {
     if (timeLeft <= 0) {
       handleSubmitQuiz();
     } else {
-      const timerId = setInterval(() => {
-        setTimeLeft((prevTime) => prevTime - 1);
-      }, 1000);
-
+      const timerId = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
       return () => clearInterval(timerId);
     }
   }, [timeLeft, handleSubmitQuiz]);
 
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
-    const secondsLeft = seconds % 60;
-    return `${minutes}:${secondsLeft < 10 ? "0" : ""}${secondsLeft}`;
+    return `${minutes}:${seconds % 60 < 10 ? "0" : ""}${seconds % 60}`;
   };
 
   return (
-    <div className="container mt-5 animate__animated animate__fadeIn">
+    <Container>
       {questions.length > 0 ? (
-        <div className="card shadow">
-          <div className="card-header bg-primary text-white">
-            <h2 className="card-title text-center mb-0">{subject} Quiz</h2>
-          </div>
-          <div className="card-body">
-            <div className="d-flex justify-content-between align-items-center mb-4">
-              <h5 className="mb-0">
-                Question {currentQuestionIndex + 1}:{" "}
-                {questions[currentQuestionIndex].question}
-              </h5>
-              <h5 className="mb-0">Time Left: {formatTime(timeLeft)}</h5>
-            </div>
-            <ul className="list-group">
+        <Card>
+          <CardHeader>{subject} Quiz</CardHeader>
+          <CardBody>
+            <QuestionText>
+              Question {currentQuestionIndex + 1}: {questions[currentQuestionIndex].question}
+            </QuestionText>
+            <TimerText>Time Left: {formatTime(timeLeft)}</TimerText>
+            <ListGroup>
               {questions[currentQuestionIndex].options.map((option, idx) => (
-                <li
+                <ListItem
                   key={idx}
-                  className={`list-group-item ${
-                    selectedOptions[currentQuestionIndex] === option
-                      ? "active"
-                      : ""
-                  }`}
+                  selected={selectedOptions[currentQuestionIndex] === option}
                   onClick={() => handleOptionSelect(option)}
                 >
                   {option}
-                </li>
+                </ListItem>
               ))}
-            </ul>
-            <div className="mt-4 d-flex justify-content-between">
-              <button
-                className="btn btn-secondary"
-                onClick={handlePreviousQuestion}
-                disabled={currentQuestionIndex === 0}
-              >
+            </ListGroup>
+            <ButtonContainer>
+              <Button onClick={handlePreviousQuestion} disabled={currentQuestionIndex === 0}>
                 Previous
-              </button>
+              </Button>
               {currentQuestionIndex < questions.length - 1 ? (
-                <button
-                  className="btn btn-primary"
-                  onClick={handleNextQuestion}
-                  disabled={!selectedOptions[currentQuestionIndex]}
-                >
+                <Button variant="primary" onClick={handleNextQuestion} disabled={!selectedOptions[currentQuestionIndex]}>
                   Next
-                </button>
+                </Button>
               ) : (
-                <button
-                  className="btn btn-success"
-                  onClick={handleSubmitQuiz}
-                  disabled={!selectedOptions[currentQuestionIndex]}
-                >
+                <Button variant="success" onClick={handleSubmitQuiz} disabled={!selectedOptions[currentQuestionIndex]}>
                   Submit Quiz
-                </button>
+                </Button>
               )}
-            </div>
-          </div>
-        </div>
+            </ButtonContainer>
+          </CardBody>
+        </Card>
       ) : (
-        <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <p className="mt-2">Loading questions...</p>
-        </div>
+        <h3>Loading questions...</h3>
       )}
-    </div>
+    </Container>
   );
 };
 

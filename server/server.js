@@ -31,6 +31,7 @@ app.use("/api/quiz", quizRouter);
 app.use("/api/user", userRouter);
 app.use("/api/admin", adminRouter);
 
+
 // Connect to MongoDB
 mongoose
   .connect(process.env.MONGO_URI)

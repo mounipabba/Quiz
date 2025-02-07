@@ -1,7 +1,149 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "./Home.css"; // Custom CSS for additional styling and animations
+import styled, { keyframes } from "styled-components";
+
+// Keyframe for a smooth fade-in effect
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+// Main container with a gradient background and fade-in animation
+const Container = styled.div`
+  margin-top: 3rem;
+  padding: 2rem 1rem;
+  animation: ${fadeIn} 1s ease-in-out;
+  background: linear-gradient(135deg, #f0f4ff 0%, #d9e4ff 100%);
+  min-height: calc(100vh - 3rem);
+`;
+
+// Flex row to structure the layout.
+const Row = styled.div`
+  display: flex;
+  flex-wrap: nowrap;
+
+  @media (max-width: 768px) {
+    flex-wrap: wrap;
+  }
+`;
+
+// Left column for semester list
+const LeftColumn = styled.div`
+  flex: 0 0 25%;
+  max-width: 25%;
+  margin-right: 1rem;
+
+  @media (max-width: 768px) {
+    flex: 0 0 100%;
+    max-width: 100%;
+    margin-right: 0;
+    margin-bottom: 1rem;
+  }
+`;
+
+// Right column for subject details
+const RightColumn = styled.div`
+  flex: 0 0 75%;
+  max-width: 75%;
+
+  @media (max-width: 768px) {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+`;
+
+// Styled container for the list group with a light shadow and rounded edges
+const ListGroup = styled.div`
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 0.5rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+`;
+
+// Styled button for each semester using a transient prop ($active)
+const ListGroupButton = styled.button`
+  width: 100%;
+  background: ${({ $active }) => ($active ? "#007bff" : "transparent")};
+  color: ${({ $active }) => ($active ? "#fff" : "#333")};
+  border: none;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+
+  &:hover {
+    background: ${({ $active }) => ($active ? "#007bff" : "#e6f0ff")};
+    transform: translateX(5px);
+  }
+`;
+
+// Card component with a modern shadow and smooth hover lift
+const Card = styled.div`
+  background: #ffffff;
+  border: none;
+  border-radius: 15px;
+  padding: 1rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  }
+`;
+
+// Card body to add spacing inside cards
+const CardBody = styled.div`
+  padding: 1.5rem;
+`;
+
+// Title styled component using a transient prop for centering ($center)
+const Title = styled.h3`
+  margin-bottom: 1.5rem;
+  color: #333;
+  font-size: 1.5rem;
+  text-align: ${({ $center }) => ($center ? "center" : "left")};
+`;
+
+// Styled button for subject items with flex layout and hover effects
+const ListGroupItem = styled.button`
+  width: 100%;
+  background: #f8f9fa;
+  border: none;
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+
+  &:hover {
+    background-color: #e2e6ea;
+    transform: translateX(5px);
+  }
+`;
+
+// Styled badge for the "Start" label with a rounded pill style
+const Badge = styled.span`
+  font-size: 0.9rem;
+  padding: 0.5em 0.75em;
+  background-color: #007bff;
+  border-radius: 50px;
+  color: #fff;
+  transition: background-color 0.3s ease;
+
+  ${ListGroupItem}:hover & {
+    background-color: #0056b3;
+  }
+`;
 
 const semestersData = {
   "Semester-1": [
@@ -62,65 +204,54 @@ const Home = ({ user }) => {
     setSelectedSemester(semester);
   };
 
-  /*const handleSubjectClick = (subject) => {
-    navigate("/instructions", { state: { subject } });
-  };*/
   const handleSubjectClick = (subject) => {
     navigate("/subject-details", { state: { subject } });
   };
-  
 
   return (
-    <div className="container mt-5 animate__animated animate__fadeIn">
-      <div className="row">
-        <div className="col-md-3 mb-4">
-          <div className="list-group shadow">
+    <Container>
+      <Row>
+        <LeftColumn>
+          <ListGroup>
             {Object.keys(semestersData).map((semester) => (
-              <button
+              <ListGroupButton
                 key={semester}
-                className={`list-group-item list-group-item-action ${
-                  selectedSemester === semester ? "active" : ""
-                }`}
+                $active={selectedSemester === semester}
                 onClick={() => handleSemesterClick(semester)}
               >
                 {semester}
-              </button>
+              </ListGroupButton>
             ))}
-          </div>
-        </div>
-        <div className="col-md-9">
+          </ListGroup>
+        </LeftColumn>
+        <RightColumn>
           {selectedSemester ? (
-            <div className="card shadow">
-              <div className="card-body">
-                <h3 className="card-title mb-4">{selectedSemester}</h3>
-                <div className="list-group">
+            <Card>
+              <CardBody>
+                <Title>{selectedSemester}</Title>
+                <div>
                   {semestersData[selectedSemester].map((subject, index) => (
-                    <button
+                    <ListGroupItem
                       key={index}
-                      className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
                       onClick={() => handleSubjectClick(subject)}
                     >
                       {subject}
-                      <span className="badge bg-primary rounded-pill">
-                        Start
-                      </span>
-                    </button>
+                      <Badge>Start</Badge>
+                    </ListGroupItem>
                   ))}
                 </div>
-              </div>
-            </div>
+              </CardBody>
+            </Card>
           ) : (
-            <div className="card shadow">
-              <div className="card-body">
-                <h3 className="card-title text-center text-muted">
-                  Please select a semester
-                </h3>
-              </div>
-            </div>
+            <Card>
+              <CardBody>
+                <Title $center>Please select a semester</Title>
+              </CardBody>
+            </Card>
           )}
-        </div>
-      </div>
-    </div>
+        </RightColumn>
+      </Row>
+    </Container>
   );
 };
 

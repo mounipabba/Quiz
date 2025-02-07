@@ -7,6 +7,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import axios from "axios";
+import styled, { keyframes, createGlobalStyle } from "styled-components";
 import Navbar from "./components/Navbar";
 import Home from "./components/Home";
 import Register from "./components/Register";
@@ -21,13 +22,54 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminPage from "./components/AdminPage";
 import AdminSubject from "./components/AdminSubject";
 import AdminUpload from "./components/AdminUpload";
+import AdminLogin from "./components/AdminLogin";
 import AdminUploadSyllabus from "./components/AdminUploadSyllabus";
 import AdminSubjectResults from "./components/AdminSubjectResults";
+import DownloadSyllabus from "./components/DownloadSyllabus";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "./App.css"; // Custom CSS for additional styling and animations
+
+// Create a GlobalStyle to reset some default margins/paddings if needed
+const GlobalStyle = createGlobalStyle`
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+  }
+`;
+
+// Define keyframes for the fade-in animation
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+`;
+
+// Styled component for the main container
+const StyledContainer = styled.div`
+  max-width: 1200px;
+  margin: 3rem auto;
+  padding: 20px;
+  animation: ${fadeIn} 1s ease-in;
+  
+  @media (max-width: 768px) {
+    padding: 10px;
+  }
+`;
+
+// Styled component for the loading screen
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+`;
 
 const App = () => {
   const [user, setUser] = useState(null);
+  const [adminAuthenticated, setAdminAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -51,89 +93,107 @@ const App = () => {
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center vh-100">
+      <LoadingContainer>
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
-      </div>
+      </LoadingContainer>
     );
   }
 
   return (
-    <Router>
-      <Navbar user={user} setUser={setUser} />
-      <div className="container mt-5 animate__animated animate__fadeIn">
-        <Routes>
-          <Route
-            path="/"
-            element={<Navigate to={user ? "/home" : "/login"} />}
-          />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login setUser={setUser} />} />
-          <Route
-            path="/home"
-            element={
-              <ProtectedRoute user={user}>
-                <Home user={user} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/quiz/:subject"
-            element={
-              <ProtectedRoute user={user}>
-                <Quiz />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/subject-details" element={<SubjectDetails />} />
-
-          <Route
-            path="/instructions"
-            element={
-              <ProtectedRoute user={user}>
-                <QuizInstructions />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/summary"
-            element={
-              <ProtectedRoute user={user}>
-                <QuizSummary />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/history"
-            element={
-              <ProtectedRoute user={user}>
-                <History />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/history/:id"
-            element={
-              <ProtectedRoute user={user}>
-                <QuizDetail />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/admin" element={<AdminPage />} />
-          <Route path="/admin/subject/:subject" element={<AdminSubject />} />
-          <Route
-            path="/admin/subject/:subject/upload"
-            element={<AdminUpload />}
-          />
-          <Route path="/admin/subject/:subject/upload-syllabus" element={<AdminUploadSyllabus />} />
-          <Route
-            path="/admin/subject/:subject/results"
-            element={<AdminSubjectResults />}
-          />
-        </Routes>
-      </div>
-    </Router>
+    <>
+      <GlobalStyle />
+      <Router>
+        <Navbar user={user} setUser={setUser} />
+        <StyledContainer>
+          <Routes>
+            <Route
+              path="/"
+              element={<Navigate to={user ? "/home" : "/login"} />}
+            />
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login setUser={setUser} />} />
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute user={user}>
+                  <Home user={user} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/quiz/:subject"
+              element={
+                <ProtectedRoute user={user}>
+                  <Quiz />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/subject-details" element={<SubjectDetails />} />
+            <Route
+              path="/instructions"
+              element={
+                <ProtectedRoute user={user}>
+                  <QuizInstructions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/summary"
+              element={
+                <ProtectedRoute user={user}>
+                  <QuizSummary />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/history"
+              element={
+                <ProtectedRoute user={user}>
+                  <History />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/history/:id"
+              element={
+                <ProtectedRoute user={user}>
+                  <QuizDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin-login"
+              element={<AdminLogin setAdminAuthenticated={setAdminAuthenticated} />}
+            />
+            <Route
+              path="/admin"
+              element={
+                adminAuthenticated ? <AdminPage /> : <Navigate to="/admin-login" />
+              }
+            />
+            <Route path="/admin/subject/:subject" element={<AdminSubject />} />
+            <Route
+              path="/admin/subject/:subject/upload"
+              element={<AdminUpload />}
+            />
+            <Route
+              path="/admin/subject/:subject/upload-syllabus"
+              element={<AdminUploadSyllabus />}
+            />
+            <Route
+              path="/admin/subject/:subject/results"
+              element={<AdminSubjectResults />}
+            />
+            <Route
+              path="/download-syllabus/:subject"
+              element={<DownloadSyllabus />}
+            />
+          </Routes>
+        </StyledContainer>
+      </Router>
+    </>
   );
 };
 
