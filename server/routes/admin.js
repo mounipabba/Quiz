@@ -5,6 +5,9 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const { Readable } = require("stream");
 const Syllabus = require("../models/Syllabus");
+const Material = require("../models/Material"); // new model for materials
+const MidPaper = require("../models/MidPaper");
+const PreviousPaper = require("../models/PreviousPaper");
 
 // Admin login route (unchanged)
 const ADMIN_USERNAME = "SCET";
@@ -276,5 +279,411 @@ router.get("/results/:subject", async (req, res) => {
     res.status(500).json({ message: "Server error while fetching results." });
   }
 });
+
+
+
+
+
+
+// routes/admin.js
+
+
+
+// ------------------------------
+// Material Upload Route
+// ------------------------------
+router.post("/upload-material", upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file provided." });
+    }
+    const subject = req.body.subject && req.body.subject.trim();
+    if (!subject) {
+      return res.status(400).json({ message: "No subject provided." });
+    }
+    const db = mongoose.connection.db;
+    const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "uploads" });
+    const { Readable } = require("stream");
+    const readableFileStream = new Readable();
+    readableFileStream.push(req.file.buffer);
+    readableFileStream.push(null);
+    const uploadStream = bucket.openUploadStream(req.file.originalname, {
+      contentType: req.file.mimetype,
+      metadata: { subject }
+    });
+    readableFileStream.pipe(uploadStream)
+      .on("error", (error) => {
+        console.error("Error uploading file to GridFS:", error);
+        return res.status(500).json({ message: "Error uploading file." });
+      })
+      .on("finish", async () => {
+        const newMaterial = new Material({
+          filename: req.file.originalname,
+          fileId: uploadStream.id.toString(), // store as string
+          contentType: req.file.mimetype,
+          uploadDate: new Date(),
+          subject,
+          metaData: req.body
+        });
+        await newMaterial.save();
+        return res.status(201).json({
+          message: "Material uploaded successfully.",
+          fileId: uploadStream.id.toString(),
+          filename: req.file.originalname,
+          subject,
+          contentType: req.file.mimetype,
+          uploadDate: new Date(),
+        });
+      });
+  } catch (error) {
+    console.error("Error in /upload-material route:", error);
+    res.status(500).json({ message: "Server error while uploading material." });
+  }
+});
+
+// --------------------------------------
+// Get Material Metadata for a Subject
+// --------------------------------------
+router.get("/material-metadata/:subject", async (req, res) => {
+  try {
+    const subjectParam = decodeURIComponent(req.params.subject).trim();
+    // Find all materials for the subject (case-insensitive)
+    const materials = await Material.find({
+      subject: { $regex: new RegExp(`^${subjectParam}$`, "i") }
+    }).sort({ uploadDate: -1 });
+
+    if (!materials || materials.length === 0) {
+      return res.status(404).json({ message: "No materials found for this subject." });
+    }
+
+    res.status(200).json(materials);
+  } catch (error) {
+    console.error("Error fetching material metadata:", error);
+    res.status(500).json({ message: "Server error fetching material metadata." });
+  }
+});
+
+// ------------------------------
+// Get Material File by FileId
+// ------------------------------
+router.get("/material-file/:id", async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const db = mongoose.connection.db;
+    const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "uploads" });
+
+    bucket.openDownloadStream(new mongoose.Types.ObjectId(fileId))
+      .on("error", (err) => {
+        console.error("Error streaming file:", err);
+        return res.status(404).json({ message: "File not found." });
+      })
+      .pipe(res);
+  } catch (error) {
+    console.error("Error in GET /material-file/:id:", error);
+    res.status(500).json({ message: "Server error fetching file." });
+  }
+});
+
+
+// ------------------------------
+// Delete a Material File
+// ------------------------------
+router.delete("/material/filename/:filename", async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const db = mongoose.connection.db;
+    const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "uploads" });
+
+    // Find the file in GridFS (case-insensitive search)
+    const files = await bucket.find({ filename: { $regex: new RegExp(`^${filename}$`, "i") } }).toArray();
+
+    if (!files || files.length === 0) {
+      return res.status(404).json({ message: "File not found in GridFS." });
+    }
+
+    const fileToDelete = files[0];
+
+    // Delete from GridFS
+    await bucket.delete(fileToDelete._id);
+
+    // Delete from Materials collection (case-insensitive)
+    const deletedMaterial = await Material.findOneAndDelete({
+      filename: { $regex: new RegExp(`^${filename}$`, "i") }
+    });
+
+    if (!deletedMaterial) {
+      return res.status(404).json({ message: "Material record not found in database." });
+    }
+
+    res.status(200).json({ message: "Material deleted successfully." });
+  } catch (error) {
+    console.error("Error in DELETE /material/filename/:filename route:", error);
+    res.status(500).json({ message: "Server error deleting material." });
+  }
+});
+
+
+
+// ------------------------------
+// Midpapers Upload Route
+// ------------------------------
+router.post("/upload-midpapers", upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file provided." });
+    }
+    const subject = req.body.subject && req.body.subject.trim();
+    if (!subject) {
+      return res.status(400).json({ message: "No subject provided." });
+    }
+    const db = mongoose.connection.db;
+    const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "uploads" });
+    const { Readable } = require("stream");
+    const readableFileStream = new Readable();
+    readableFileStream.push(req.file.buffer);
+    readableFileStream.push(null);
+    const uploadStream = bucket.openUploadStream(req.file.originalname, {
+      contentType: req.file.mimetype,
+      metadata: { subject }
+    });
+    readableFileStream.pipe(uploadStream)
+      .on("error", (error) => {
+        console.error("Error uploading file to GridFS:", error);
+        return res.status(500).json({ message: "Error uploading file." });
+      })
+      .on("finish", async () => {
+        const newMidPaper = new MidPaper({
+          filename: req.file.originalname,
+          fileId: uploadStream.id.toString(), // store as string
+          contentType: req.file.mimetype,
+          uploadDate: new Date(),
+          subject,
+          metaData: req.body
+        });
+        await newMidPaper.save();
+        return res.status(201).json({
+          message: "Midpapers uploaded successfully.",
+          fileId: uploadStream.id.toString(),
+          filename: req.file.originalname,
+          subject,
+          contentType: req.file.mimetype,
+          uploadDate: new Date(),
+        });
+      });
+  } catch (error) {
+    console.error("Error in /upload-midpapers route:", error);
+    res.status(500).json({ message: "Server error while uploading midpapers." });
+  }
+});
+
+// --------------------------------------
+// Get Midpapers Metadata for a Subject
+// --------------------------------------
+router.get("/midpapers-metadata/:subject", async (req, res) => {
+  try {
+    const subjectParam = decodeURIComponent(req.params.subject).trim();
+    // Find all midpapers for the subject (case-insensitive)
+    const midpapers = await MidPaper.find({
+      subject: { $regex: new RegExp(`^${subjectParam}$`, "i") }
+    }).sort({ uploadDate: -1 });
+
+    if (!midpapers || midpapers.length === 0) {
+      return res.status(404).json({ message: "No midpapers found for this subject." });
+    }
+
+    res.status(200).json(midpapers);
+  } catch (error) {
+    console.error("Error fetching midpapers metadata:", error);
+    res.status(500).json({ message: "Server error fetching midpapers metadata." });
+  }
+});
+
+// ------------------------------
+// Get Midpapers File by FileId
+// ------------------------------
+router.get("/midpapers-file/:id", async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const db = mongoose.connection.db;
+    const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "uploads" });
+
+    bucket.openDownloadStream(new mongoose.Types.ObjectId(fileId))
+      .on("error", (err) => {
+        console.error("Error streaming file:", err);
+        return res.status(404).json({ message: "File not found." });
+      })
+      .pipe(res);
+  } catch (error) {
+    console.error("Error in GET /midpapers-file/:id:", error);
+    res.status(500).json({ message: "Server error fetching file." });
+  }
+});
+
+// ------------------------------
+// Delete a Midpapers File
+// ------------------------------
+router.delete("/midpapers/filename/:filename", async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const db = mongoose.connection.db;
+    const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "uploads" });
+
+    // Find the file in GridFS (case-insensitive search)
+    const files = await bucket.find({ filename: { $regex: new RegExp(`^${filename}$`, "i") } }).toArray();
+
+    if (!files || files.length === 0) {
+      return res.status(404).json({ message: "File not found in GridFS." });
+    }
+
+    const fileToDelete = files[0];
+
+    // Delete from GridFS
+    await bucket.delete(fileToDelete._id);
+
+    // Delete from MidPapers collection (case-insensitive)
+    const deletedMidPaper = await MidPaper.findOneAndDelete({
+      filename: { $regex: new RegExp(`^${filename}$`, "i") }
+    });
+
+    if (!deletedMidPaper) {
+      return res.status(404).json({ message: "Midpapers record not found in database." });
+    }
+
+    res.status(200).json({ message: "Midpapers deleted successfully." });
+  } catch (error) {
+    console.error("Error in DELETE /midpapers/filename/:filename route:", error);
+    res.status(500).json({ message: "Server error deleting midpapers." });
+  }
+});
+
+
+router.post("/upload-previouspapers", upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file provided." });
+    }
+    const subject = req.body.subject && req.body.subject.trim();
+    if (!subject) {
+      return res.status(400).json({ message: "No subject provided." });
+    }
+    const db = mongoose.connection.db;
+    const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "uploads" });
+    const { Readable } = require("stream");
+    const readableFileStream = new Readable();
+    readableFileStream.push(req.file.buffer);
+    readableFileStream.push(null);
+    const uploadStream = bucket.openUploadStream(req.file.originalname, {
+      contentType: req.file.mimetype,
+      metadata: { subject }
+    });
+    readableFileStream.pipe(uploadStream)
+      .on("error", (error) => {
+        console.error("Error uploading file to GridFS:", error);
+        return res.status(500).json({ message: "Error uploading file." });
+      })
+      .on("finish", async () => {
+        const newPreviousPaper = new PreviousPaper({
+          filename: req.file.originalname,
+          fileId: uploadStream.id.toString(), // store as string
+          contentType: req.file.mimetype,
+          uploadDate: new Date(),
+          subject,
+          metaData: req.body
+        });
+        await newPreviousPaper.save();
+        return res.status(201).json({
+          message: "Previous papers uploaded successfully.",
+          fileId: uploadStream.id.toString(),
+          filename: req.file.originalname,
+          subject,
+          contentType: req.file.mimetype,
+          uploadDate: new Date(),
+        });
+      });
+  } catch (error) {
+    console.error("Error in /upload-previouspapers route:", error);
+    res.status(500).json({ message: "Server error while uploading previous papers." });
+  }
+});
+
+// --------------------------------------
+// Get Previous Papers Metadata for a Subject
+// --------------------------------------
+router.get("/previouspapers-metadata/:subject", async (req, res) => {
+  try {
+    const subjectParam = decodeURIComponent(req.params.subject).trim();
+    const previousPapers = await PreviousPaper.find({
+      subject: { $regex: new RegExp(`^${subjectParam}$`, "i") }
+    }).sort({ uploadDate: -1 });
+
+    if (!previousPapers || previousPapers.length === 0) {
+      return res.status(404).json({ message: "No previous papers found for this subject." });
+    }
+
+    res.status(200).json(previousPapers);
+  } catch (error) {
+    console.error("Error fetching previous papers metadata:", error);
+    res.status(500).json({ message: "Server error fetching previous papers metadata." });
+  }
+});
+
+// ------------------------------
+// Get Previous Paper File by FileId
+// ------------------------------
+router.get("/previouspapers-file/:id", async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const db = mongoose.connection.db;
+    const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "uploads" });
+
+    bucket.openDownloadStream(new mongoose.Types.ObjectId(fileId))
+      .on("error", (err) => {
+        console.error("Error streaming file:", err);
+        return res.status(404).json({ message: "File not found." });
+      })
+      .pipe(res);
+  } catch (error) {
+    console.error("Error in GET /previouspapers-file/:id:", error);
+    res.status(500).json({ message: "Server error fetching file." });
+  }
+});
+
+// ------------------------------
+// Delete a Previous Paper File by Filename
+// ------------------------------
+router.delete("/previouspapers/filename/:filename", async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const db = mongoose.connection.db;
+    const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "uploads" });
+
+    // Find the file in GridFS (case-insensitive)
+    const files = await bucket.find({ filename: { $regex: new RegExp(`^${filename}$`, "i") } }).toArray();
+
+    if (!files || files.length === 0) {
+      return res.status(404).json({ message: "File not found in GridFS." });
+    }
+
+    const fileToDelete = files[0];
+
+    // Delete from GridFS
+    await bucket.delete(fileToDelete._id);
+
+    // Delete from PreviousPapers collection (case-insensitive)
+    const deletedPreviousPaper = await PreviousPaper.findOneAndDelete({
+      filename: { $regex: new RegExp(`^${filename}$`, "i") }
+    });
+
+    if (!deletedPreviousPaper) {
+      return res.status(404).json({ message: "Previous paper record not found in database." });
+    }
+
+    res.status(200).json({ message: "Previous papers deleted successfully." });
+  } catch (error) {
+    console.error("Error in DELETE /previouspapers/filename/:filename:", error);
+    res.status(500).json({ message: "Server error deleting previous papers." });
+  }
+});
+
 
 module.exports = router;

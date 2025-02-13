@@ -101,6 +101,15 @@ const SubjectDetails = () => {
     if (type === "syllabus") {
       // Navigate to the DownloadSyllabus page with the subject
       navigate(`/download-syllabus/${encodeURIComponent(subject)}`);
+    } else if (type === "materials") {
+      // Navigate to the DownloadMaterial page with the subject
+      navigate(`/download-material/${encodeURIComponent(subject)}`);
+    }else if (type === "midpapers") {
+      // Navigate to the DownloadMaterial page with the subject
+      navigate(`/download-midpaper/${encodeURIComponent(subject)}`);
+    }else if (type === "previouspapers") {
+      // Navigate to the DownloadMaterial page with the subject
+      navigate(`/download-previouspaper/${encodeURIComponent(subject)}`);
     } else {
       // Navigate using the subject and type in a URL-friendly way
       navigate(`/subject/${subject.toLowerCase().replace(/\s+/g, "-")}/${type}`);

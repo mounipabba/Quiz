@@ -24,8 +24,15 @@ import AdminSubject from "./components/AdminSubject";
 import AdminUpload from "./components/AdminUpload";
 import AdminLogin from "./components/AdminLogin";
 import AdminUploadSyllabus from "./components/AdminUploadSyllabus";
+import AdminUploadMaterial from "./components/AdminUploadMaterials";
+import AdminUploadMidPapers from "./components/AdminUploadMidPapers";
 import AdminSubjectResults from "./components/AdminSubjectResults";
+import AdminUploadPreviousPapers from "./components/AdminUploadPreviousPapers";
 import DownloadSyllabus from "./components/DownloadSyllabus";
+import DownloadMaterial from "./components/DownloadMaterial";
+import DownloadMidPapers from "./components/DownloadMidPapers";
+import DownloadPreviousPapers from "./components/DownloadPreviousPapers";
+import LandingPage from "./components/LandingPage"; 
 import "bootstrap/dist/css/bootstrap.min.css";
 
 // Create a GlobalStyle to reset some default margins/paddings if needed
@@ -108,10 +115,8 @@ const App = () => {
         <Navbar user={user} setUser={setUser} />
         <StyledContainer>
           <Routes>
-            <Route
-              path="/"
-              element={<Navigate to={user ? "/home" : "/login"} />}
-            />
+          <Route path="/" element={<Navigate to={user ? "/home" : "/landing"} />} />
+          <Route path="/landing" element={<LandingPage />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login setUser={setUser} />} />
             <Route
@@ -183,12 +188,36 @@ const App = () => {
               element={<AdminUploadSyllabus />}
             />
             <Route
+              path="/admin/subject/:subject/upload-material"
+              element={<AdminUploadMaterial />}
+            />
+            <Route
+              path="/admin/subject/:subject/upload-midpapers"
+              element={<AdminUploadMidPapers />}
+            />
+            <Route
+              path="/admin/subject/:subject/upload-previouspapers"
+              element={<AdminUploadPreviousPapers />}
+            />
+            <Route
               path="/admin/subject/:subject/results"
               element={<AdminSubjectResults />}
             />
             <Route
               path="/download-syllabus/:subject"
               element={<DownloadSyllabus />}
+            />
+            <Route
+              path="/download-material/:subject"
+              element={<DownloadMaterial />}
+            />
+            <Route
+              path="/download-midpaper/:subject"
+              element={<DownloadMidPapers />}
+            />
+            <Route
+              path="/download-previouspaper/:subject"
+              element={<DownloadPreviousPapers />}
             />
           </Routes>
         </StyledContainer>
